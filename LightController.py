@@ -13,42 +13,50 @@ def toggle_usb_power(state):
     else:
         print(f"[{datetime.now()}] Invalid state: {state}")
 
-# Function to determine if USB power should be off
-def should_turn_off(hour):
-    # Actual Time Logic: Turn off between 9-18 and 21-6
+# Function to determine if USB power should be ON
+def should_turn_on(hour):
+    # Lights ON between 9:00 to 18:00 and 21:00 to 6:00
     if (9 <= hour < 18) or (21 <= hour or hour < 6):
         return True
     return False
 
-# Test Mode
+# Test Mode: Interactive on/off control
 def test_mode():
     print(f"[{datetime.now()}] Running in TEST MODE")
-    for hour in range(0, 24):
-        if should_turn_off(hour):
-            print(f"[{datetime.now().replace(hour=hour)}] Turning USB OFF")
+    while True:
+        command = input("Type 'on' to turn on, 'off' to turn off, or 'exit' to quit: ").strip().lower()
+        if command == "on":
+            toggle_usb_power("on")
+        elif command == "off":
+            toggle_usb_power("off")
+        elif command == "exit":
+            print(f"[{datetime.now()}] Exiting TEST MODE")
+            break
         else:
-            print(f"[{datetime.now().replace(hour=hour)}] Turning USB ON")
+            print(f"[{datetime.now()}] Invalid command. Please type 'on', 'off', or 'exit'.")
 
-# Main Control Loop
-def run_control():
+# Run Mode: Automated control based on time
+def run_mode():
+    print(f"[{datetime.now()}] Running in RUN MODE")
     while True:
         now = datetime.now()
         hour = now.hour
 
-        if should_turn_off(hour):
-            toggle_usb_power("off")
-        else:
+        # Determine if the lights should be ON or OFF
+        if should_turn_on(hour):
             toggle_usb_power("on")
+        else:
+            toggle_usb_power("off")
 
-        # Sleep for 1 minute before re-checking
+        # Sleep for 1 minute before checking again
         time.sleep(60)
 
-# Run Test Mode or Actual Control
+# Main Function
 if __name__ == "__main__":
-    mode = input("Enter 'test' for test mode or 'run' for actual mode: ").strip().lower()
+    mode = input("Enter 'test' for test mode or 'run' for automated mode: ").strip().lower()
     if mode == "test":
         test_mode()
     elif mode == "run":
-        run_control()
+        run_mode()
     else:
-        print("Invalid input. Please enter 'test' or 'run'.")
+        print(f"[{datetime.now()}] Invalid input. Please enter 'test' or 'run'.")
