@@ -1,19 +1,25 @@
-import os
+import RPi.GPIO as GPIO
 import time
 from datetime import datetime
 
-# Function to toggle USB power
-def toggle_usb_power(state):
-    if state == "off":
-        os.system("echo '1-1' | sudo tee /sys/bus/usb/drivers/usb/unbind")
-        print(f"[{datetime.now()}] USB ports turned OFF")
-    elif state == "on":
-        os.system("echo '1-1' | sudo tee /sys/bus/usb/drivers/usb/bind")
-        print(f"[{datetime.now()}] USB ports turned ON")
-    else:
-        print(f"[{datetime.now()}] Invalid state: {state}")
+# GPIO pin configuration
+relay_pin = 17  # Use GPIO pin 17
 
-# Function to determine if USB power should be ON
+# Setup GPIO
+GPIO.setmode(GPIO.BCM)
+GPIO.setup(relay_pin, GPIO.OUT)
+
+# Function to turn on the power
+def power_on():
+    GPIO.output(relay_pin, GPIO.HIGH)
+    print(f"[{datetime.now()}] Power ON")
+
+# Function to turn off the power
+def power_off():
+    GPIO.output(relay_pin, GPIO.LOW)
+    print(f"[{datetime.now()}] Power OFF")
+
+# Function to determine if power should be ON
 def should_turn_on(hour):
     # Lights ON between 9:00 to 18:00 and 21:00 to 6:00
     if (9 <= hour < 18) or (21 <= hour or hour < 6):
@@ -23,33 +29,39 @@ def should_turn_on(hour):
 # Test Mode: Interactive on/off control
 def test_mode():
     print(f"[{datetime.now()}] Running in TEST MODE")
-    while True:
-        command = input("Type 'on' to turn on, 'off' to turn off, or 'exit' to quit: ").strip().lower()
-        if command == "on":
-            toggle_usb_power("on")
-        elif command == "off":
-            toggle_usb_power("off")
-        elif command == "exit":
-            print(f"[{datetime.now()}] Exiting TEST MODE")
-            break
-        else:
-            print(f"[{datetime.now()}] Invalid command. Please type 'on', 'off', or 'exit'.")
+    try:
+        while True:
+            command = input("Type 'on' to turn on, 'off' to turn off, or 'exit' to quit: ").strip().lower()
+            if command == "on":
+                power_on()
+            elif command == "off":
+                power_off()
+            elif command == "exit":
+                print(f"[{datetime.now()}] Exiting TEST MODE")
+                break
+            else:
+                print(f"[{datetime.now()}] Invalid command. Please type 'on', 'off', or 'exit'.")
+    finally:
+        GPIO.cleanup()
 
 # Run Mode: Automated control based on time
 def run_mode():
     print(f"[{datetime.now()}] Running in RUN MODE")
-    while True:
-        now = datetime.now()
-        hour = now.hour
+    try:
+        while True:
+            now = datetime.now()
+            hour = now.hour
 
-        # Determine if the lights should be ON or OFF
-        if should_turn_on(hour):
-            toggle_usb_power("on")
-        else:
-            toggle_usb_power("off")
+            # Determine if the lights should be ON or OFF
+            if should_turn_on(hour):
+                power_on()
+            else:
+                power_off()
 
-        # Sleep for 1 minute before checking again
-        time.sleep(60)
+            # Sleep for 1 minute before checking again
+            time.sleep(60)
+    finally:
+        GPIO.cleanup()
 
 # Main Function
 if __name__ == "__main__":
